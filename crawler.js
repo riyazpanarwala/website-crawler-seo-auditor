@@ -4,6 +4,14 @@ import fs from "fs";
 // 1. Change to your root website URL
 const ROOT = "https://your-website.com";
 
+// 2. Configuration - Report directories
+const REPORT_CONFIG = {
+  baseDir: "site-report",
+  screenshotsDir: "site-report/screenshots",
+  jsonReport: "site-report/report.json",
+  htmlReport: "site-report/index.html"
+};
+
 const visited = new Set();
 const queue = [ROOT];
 const results = [];
@@ -17,8 +25,9 @@ const DOCUMENT_EXTENSIONS = [
   '.txt', '.rtf'
 ];
 
-fs.mkdirSync("site-report", { recursive: true });
-fs.mkdirSync("site-report/screenshots", { recursive: true });
+// Create report directories
+fs.mkdirSync(REPORT_CONFIG.baseDir, { recursive: true });
+fs.mkdirSync(REPORT_CONFIG.screenshotsDir, { recursive: true });
 
 // Track already checked images globally to avoid duplicates
 const checkedImages = new Map(); // Map<imageUrl, { exists: boolean, verified: boolean }>
@@ -456,8 +465,9 @@ async function crawlAndTest() {
 
     // Save Screenshot (only for HTML pages)
     try {
+      const screenshotPath = `${REPORT_CONFIG.screenshotsDir}/${encodeURIComponent(normalizedUrl.replace(/[^a-zA-Z0-9]/g, '_'))}.png`;
       await page.screenshot({
-        path: `site-report/screenshots/${encodeURIComponent(normalizedUrl.replace(/[^a-zA-Z0-9]/g, '_'))}.png`,
+        path: screenshotPath,
         fullPage: true,
       });
     } catch (screenshotError) {
@@ -859,11 +869,11 @@ function generateReport() {
   </html>
   `;
 
-  fs.writeFileSync("site-report/index.html", html);
+  fs.writeFileSync(REPORT_CONFIG.htmlReport, html);
   
   // Also generate a JSON report for programmatic use
   fs.writeFileSync(
-    'site-report/report.json', 
+    REPORT_CONFIG.jsonReport, 
     JSON.stringify({
       summary: {
         totalPages,
@@ -890,8 +900,9 @@ function generateReport() {
     }, null, 2)
   );
   
-  console.log("\n📄 Report generated: site-report/index.html");
-  console.log("📊 JSON data: site-report/report.json");
+  console.log(`\n📄 Report generated: ${REPORT_CONFIG.htmlReport}`);
+  console.log(`📊 JSON data: ${REPORT_CONFIG.jsonReport}`);
+  console.log(`📸 Screenshots: ${REPORT_CONFIG.screenshotsDir}`);
   console.log(`\n📈 Summary:`);
   console.log(`   Total URLs checked: ${totalPages}`);
   console.log(`   HTML pages: ${htmlPages.length}`);
