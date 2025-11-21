@@ -1,4 +1,3 @@
-# website-crawler-seo-auditor
 # 🕷️ Website Crawler & SEO Auditor
 
 A powerful Node.js tool built with Playwright that automatically crawls your website, checks for SEO issues, broken links, image problems, and generates detailed reports.
