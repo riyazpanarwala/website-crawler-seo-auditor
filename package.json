@@ -1,14 +1,36 @@
 {
-  "name": "webtest",
+  "name": "website-crawler-seo-auditor",
   "version": "1.0.0",
-  "description": "",
-  "main": "full-site-test.js",
-  "scripts": {},
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@playwright/test": "^1.56.1",
-    "@types/node": "^24.10.1"
-  }
+  "description": "A powerful website crawler and SEO auditor built with Playwright",
+  "main": "crawler.js",
+  "scripts": {
+    "start": "node crawler.js",
+    "dev": "node --watch crawler.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "crawler",
+    "seo",
+    "audit",
+    "playwright",
+    "website",
+    "analysis",
+    "broken-links",
+    "image-checker"
+  ],
+  "author": "Riyaz Panarwala",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/website-crawler-seo-auditor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/website-crawler-seo-auditor/issues"
+  },
+  "homepage": "https://github.com/yourusername/website-crawler-seo-auditor#readme"
 }

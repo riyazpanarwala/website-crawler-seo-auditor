@@ -36,10 +36,9 @@ A powerful Node.js tool built with Playwright that automatically crawls your web
 
 3. **Configure the target website:**:
     * Open crawler.js
-    * Change the ROOT constant to your website URL: 
+    * Change the ROOT constant to your website URL:
     * const ROOT = "https://your-website.com";
 
 4. **Run the crawler:**:
     ```bash
-   node full-site-test.js
-
+   npm start
