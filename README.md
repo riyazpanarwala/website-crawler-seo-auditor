@@ -1,43 +1,153 @@
 # 🕷️ Website Crawler & SEO Auditor
 
-A powerful Node.js tool built with Playwright that automatically crawls your website, checks for SEO issues, broken links, image problems, and generates detailed reports.
+A powerful **Node.js + Playwright** based tool that automatically
+**crawls your entire website**, checks SEO issues, validates links,
+analyzes images, captures screenshots, and generates complete audit
+reports.
 
 ## ✨ Features
 
-- **🌐 Complete Website Crawling**: Automatically discovers and crawls all internal pages
-- **🔍 SEO Analysis**: Checks meta titles, descriptions, and important meta tags
-- **🖼️ Image Analysis**: Verifies image existence, alt text, and dimensions with duplicate prevention
-- **🔗 Link Validation**: Identifies broken internal and external links
-- **📄 Document Checking**: Verifies PDFs, images, and other document links
-- **🚨 Error Detection**: Captures JavaScript errors and console warnings with intelligent filtering
-- **📊 Comprehensive Reporting**: Generates HTML and JSON reports with detailed statistics
-- **⚡ Performance Optimized**: Avoids duplicate checks for URLs and images
-- **📸 Screenshot Capture**: Takes full-page screenshots of all pages
-- **🔧 Customizable**: Easy to extend with new checks and validations
+### 🌐 Complete Website Crawling
+
+-   Automatically discovers **all internal pages**
+-   Crawls every reachable HTML page (20--30+ pages)
+-   Prevents duplicate scans using a `visited` set
+
+### 🔍 SEO Analysis
+
+-   Validates:
+    -   `<title>`
+    -   `<meta name="description">`
+    -   `<meta name="keywords">`
+-   Detects missing, empty, or duplicate SEO tags
+
+### 🖼️ Image Analysis
+
+-   Reports:
+    -   Broken images
+    -   Missing `alt` attributes
+    -   Empty `alt` attributes
+-   Avoids duplicate image checks for speed
+
+### 🔗 Link Validation
+
+-   Checks:
+    -   Internal links
+    -   External links
+    -   PDF/document links
+-   Detects:
+    -   404/500 broken links
+    -   Redirect chains
+    -   Empty or invalid href values
+
+### 📄 Document Checking
+
+-   Verifies:
+    -   PDFs
+    -   Images
+    -   ZIP files
+    -   Any external assets
+-   Reports broken or unreachable documents
+
+### 🚨 Error Detection
+
+-   Captures:
+    -   JavaScript errors
+    -   Console errors/warnings
+-   Filters out noise and detects real issues
+
+### 📸 Screenshot Capture
+
+-   Captures full-page screenshots for **every page**
+-   Stores them inside `/screenshots/`
+
+### 📊 Comprehensive Reporting
+
+Automatically generates:
+
+  File                    Description
+  ----------------------- -------------------------------
+  `/report/report.json`   Machine-readable audit output
+  `/report/report.html`   Clean human-readable report
+
+Contains: - Total pages scanned\
+- Broken links\
+- Image problems\
+- SEO issues\
+- JavaScript errors\
+- Crawl map\
+- Page-wise summary
+
+### ⚡ Performance Optimized
+
+-   Uses BFS crawling
+-   Avoids repeated checks
+-   Caches processed URLs, images & documents
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 16 or higher
-- npm or yarn
+Make sure you have:
 
-### Installation
+-   **Node.js 16+**
+-   **npm** or **yarn**
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/riyazpanarwala/website-crawler-seo-auditor.git
-   cd website-crawler-seo-auditor
+## 📦 Installation
 
-2. **Install dependencies:**:
-   ```bash
-   npm install
+### 1. Clone the Repository
 
-3. **Configure the target website:**:
-    * Open crawler.js
-    * Change the ROOT constant to your website URL:
-    * const ROOT = "https://your-website.com";
+``` bash
+git clone https://github.com/riyazpanarwala/website-crawler-seo-auditor.git
+cd website-crawler-seo-auditor
+```
 
-4. **Run the crawler:**:
-    ```bash
-   npm start
+### 2. Install Dependencies
+
+``` bash
+npm install
+```
+
+### 3. Configure Your Target Website
+
+Open **crawler.js** and set your website root URL:
+
+``` js
+const ROOT = "https://your-website.com";
+```
+
+### 4. Run the Crawler
+
+``` bash
+npm start
+```
+
+This will:
+
+-   Crawl all pages\
+-   Validate links\
+-   Check SEO\
+-   Analyze images\
+-   Capture screenshots\
+-   Generate reports
+
+## 📁 Output Structure
+
+After running, you'll see:
+
+    /screenshots/          → All page screenshots
+    /report/
+        report.json        → JSON audit data
+        report.html        → Full HTML report
+
+## 🤝 Contributing
+
+Contributions are welcome!\
+You can add:
+
+-   More SEO checks\
+-   Accessibility checks\
+-   More report sections\
+-   CI/CD integration
+
+Just open a pull request.
