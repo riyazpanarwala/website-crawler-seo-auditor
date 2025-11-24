@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A powerful website crawler and SEO auditor built with Playwright",
   "main": "crawler.js",
+  "type": "module",
   "scripts": {
     "start": "node crawler.js",
     "dev": "node --watch crawler.js",

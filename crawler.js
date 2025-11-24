@@ -8,9 +8,25 @@ const ROOT = "https://your-website.com";
 const REPORT_CONFIG = {
   baseDir: "site-report",
   screenshotsDir: "site-report/screenshots",
+  mobileScreenshotsDir: "site-report/screenshots/mobile",
+  desktopScreenshotsDir: "site-report/screenshots/desktop",
   jsonReport: "site-report/report.json",
   htmlReport: "site-report/index.html"
 };
+
+// 3. Mobile device configuration
+const MOBILE_DEVICES = [
+  {
+    name: 'mobile',
+    viewport: { width: 375, height: 667 }, // iPhone SE
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+  },
+  {
+    name: 'tablet',
+    viewport: { width: 768, height: 1024 }, // iPad
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+  }
+];
 
 const visited = new Set();
 const queue = [ROOT];
@@ -28,6 +44,8 @@ const DOCUMENT_EXTENSIONS = [
 // Create report directories
 fs.mkdirSync(REPORT_CONFIG.baseDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.screenshotsDir, { recursive: true });
+fs.mkdirSync(REPORT_CONFIG.mobileScreenshotsDir, { recursive: true });
+fs.mkdirSync(REPORT_CONFIG.desktopScreenshotsDir, { recursive: true });
 
 // Track already checked images globally to avoid duplicates
 const checkedImages = new Map(); // Map<imageUrl, { exists: boolean, verified: boolean }>
@@ -216,6 +234,66 @@ async function checkImageExists(page, imageUrl) {
   }
 }
 
+// Function to take screenshots for different devices
+async function takeScreenshots(page, url, normalizedUrl) {
+  const screenshots = {
+    desktop: null,
+    mobile: [],
+    tablet: []
+  };
+
+  const fileName = encodeURIComponent(normalizedUrl.replace(/[^a-zA-Z0-9]/g, '_'));
+
+  try {
+    // Take desktop screenshot
+    const desktopPath = `${REPORT_CONFIG.desktopScreenshotsDir}/${fileName}.png`;
+    await page.screenshot({
+      path: desktopPath,
+      fullPage: true,
+    });
+    screenshots.desktop = `desktop/${fileName}.png`;
+    console.log(`   📸 Desktop screenshot saved`);
+  } catch (screenshotError) {
+    console.log(`   ⚠ Could not take desktop screenshot: ${screenshotError.message}`);
+  }
+
+  // Take mobile and tablet screenshots
+  for (const device of MOBILE_DEVICES) {
+    try {
+      // Create a new context for each device to ensure clean state
+      const context = await page.context().browser().newContext({
+        viewport: device.viewport,
+        userAgent: device.userAgent
+      });
+      const devicePage = await context.newPage();
+      
+      // Navigate to the URL with device-specific context
+      await devicePage.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+      
+      const devicePath = `${REPORT_CONFIG.mobileScreenshotsDir}/${device.name}_${fileName}.png`;
+      await devicePage.screenshot({
+        path: devicePath,
+        fullPage: true,
+      });
+      
+      if (device.name === 'mobile') {
+        screenshots.mobile.push(`mobile/${device.name}_${fileName}.png`);
+      } else {
+        screenshots.tablet.push(`mobile/${device.name}_${fileName}.png`);
+      }
+      
+      console.log(`   📸 ${device.name} screenshot saved`);
+      
+      // Close the device context
+      await context.close();
+    } catch (deviceError) {
+      console.log(`   ⚠ Could not take ${device.name} screenshot: ${deviceError.message}`);
+    }
+  }
+
+  return screenshots;
+}
+
 async function crawlAndTest() {
   const browser = await chromium.launch({ 
     headless: true,
@@ -263,7 +341,12 @@ async function crawlAndTest() {
       metaTags: {},
       isDocument: false,
       documentType: "",
-      documentStatus: ""
+      documentStatus: "",
+      screenshots: {
+        desktop: null,
+        mobile: [],
+        tablet: []
+      }
     };
 
     // Check if this is a document URL
@@ -425,6 +508,10 @@ async function crawlAndTest() {
       console.log(`Could not analyze images for ${url}: ${error.message}`);
     }
 
+    // Take screenshots for all devices
+    console.log(`Taking screenshots for different devices...`);
+    pageResult.screenshots = await takeScreenshots(page, url, normalizedUrl);
+
     // Extract all links (both internal and document links)
     const allLinks = await page.$$eval("a[href]", (as, root) => {
       return as
@@ -462,17 +549,6 @@ async function crawlAndTest() {
     // Track document links but don't add to queue (we'll check them separately)
     pageResult.links = internalLinks;
     pageResult.documentLinks = documentLinks;
-
-    // Save Screenshot (only for HTML pages)
-    try {
-      const screenshotPath = `${REPORT_CONFIG.screenshotsDir}/${encodeURIComponent(normalizedUrl.replace(/[^a-zA-Z0-9]/g, '_'))}.png`;
-      await page.screenshot({
-        path: screenshotPath,
-        fullPage: true,
-      });
-    } catch (screenshotError) {
-      console.log(`Could not take screenshot for ${url}: ${screenshotError.message}`);
-    }
 
     // Save result
     results.push(pageResult);
@@ -666,6 +742,50 @@ function generateReport() {
         font-size: 0.8em;
         font-style: italic;
       }
+      .screenshot-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+      }
+      .screenshot-item {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        background: #fafafa;
+        text-align: center;
+      }
+      .screenshot-item img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      .screenshot-label {
+        font-weight: bold;
+        margin: 8px 0 4px 0;
+        color: #555;
+      }
+      .device-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: bold;
+        margin-left: 8px;
+      }
+      .desktop-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+      .mobile-badge {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+      .tablet-badge {
+        background: #e8f5e8;
+        color: #388e3c;
+      }
     </style>
   </head>
   <body>
@@ -748,9 +868,46 @@ function generateReport() {
             <h2>${r.url}</h2>
             <p><strong>Title:</strong> ${r.title} ${!r.title || r.title === "⚠ Missing <title>" ? '<span class="missing">(MISSING)</span>' : ''}</p>
             <p><strong>Load Time:</strong> <span class="load-time">${r.loadTime}ms</span></p>
-            <p><strong>Screenshots:</strong> 
-              <a href="screenshots/${encodeURIComponent(normalizeUrl(r.url).replace(/[^a-zA-Z0-9]/g, '_'))}.png" target="_blank">View Screenshot</a>
-            </p>
+
+            <h3>📸 Screenshots</h3>
+            <div class="screenshot-gallery">
+              ${r.screenshots.desktop ? `
+                <div class="screenshot-item">
+                  <div class="screenshot-label">
+                    Desktop 
+                    <span class="device-badge desktop-badge">375×667</span>
+                  </div>
+                  <a href="screenshots/${r.screenshots.desktop}" target="_blank">
+                    <img src="screenshots/${r.screenshots.desktop}" alt="Desktop view of ${r.url}" loading="lazy">
+                  </a>
+                  <div>Click to view full size</div>
+                </div>
+              ` : ''}
+              ${r.screenshots.mobile.map(mobileShot => `
+                <div class="screenshot-item">
+                  <div class="screenshot-label">
+                    Mobile 
+                    <span class="device-badge mobile-badge">375×667</span>
+                  </div>
+                  <a href="screenshots/${mobileShot}" target="_blank">
+                    <img src="screenshots/${mobileShot}" alt="Mobile view of ${r.url}" loading="lazy">
+                  </a>
+                  <div>Click to view full size</div>
+                </div>
+              `).join('')}
+              ${r.screenshots.tablet.map(tabletShot => `
+                <div class="screenshot-item">
+                  <div class="screenshot-label">
+                    Tablet 
+                    <span class="device-badge tablet-badge">768×1024</span>
+                  </div>
+                  <a href="screenshots/${tabletShot}" target="_blank">
+                    <img src="screenshots/${tabletShot}" alt="Tablet view of ${r.url}" loading="lazy">
+                  </a>
+                  <div>Click to view full size</div>
+                </div>
+              `).join('')}
+            </div>
 
             <h3>🖼️ Image Analysis (${imageAnalysis.total || 0} images)</h3>
             ${imageAnalysis.total > 0 ? `
@@ -903,6 +1060,8 @@ function generateReport() {
   console.log(`\n📄 Report generated: ${REPORT_CONFIG.htmlReport}`);
   console.log(`📊 JSON data: ${REPORT_CONFIG.jsonReport}`);
   console.log(`📸 Screenshots: ${REPORT_CONFIG.screenshotsDir}`);
+  console.log(`   ├── Desktop: ${REPORT_CONFIG.desktopScreenshotsDir}`);
+  console.log(`   └── Mobile: ${REPORT_CONFIG.mobileScreenshotsDir}`);
   console.log(`\n📈 Summary:`);
   console.log(`   Total URLs checked: ${totalPages}`);
   console.log(`   HTML pages: ${htmlPages.length}`);
