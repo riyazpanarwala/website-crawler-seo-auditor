@@ -140,7 +140,7 @@ function setupErrorHandling(page, pageResult) {
 }
 
 async function checkDocumentUrl(page, url, pageResult) {
-  console.log(`📄 Checking document: ${url}`);
+  console.log(`Checking document: ${url}`);
   
   const startTime = Date.now();
   try {
@@ -178,12 +178,12 @@ async function checkImageExists(page, imageUrl) {
   // Check if we've already verified this image
   if (checkedImages.has(normalizedImageUrl)) {
     const existingCheck = checkedImages.get(normalizedImageUrl);
-    console.log(`   🖼️  Using cached check for: ${imageUrl} -> ${existingCheck.exists ? 'EXISTS' : 'BROKEN'}`);
+    console.log(`Using cached check for: ${imageUrl} -> ${existingCheck.exists ? 'EXISTS' : 'BROKEN'}`);
     return existingCheck.exists;
   }
 
   try {
-    console.log(`   🖼️  Checking image: ${imageUrl}`);
+    console.log(`Checking image: ${imageUrl}`);
     const response = await page.evaluate(async (url) => {
       try {
         const response = await fetch(url, { method: 'HEAD' });
@@ -234,12 +234,12 @@ async function crawlAndTest() {
     
     // Check if this URL (or normalized version) has already been visited
     if (visited.has(normalizedUrl)) {
-      console.log(`⏭️  Skipping already checked: ${url}`);
+      console.log(`Skipping already checked: ${url}`);
       continue;
     }
     
     visited.add(normalizedUrl);
-    console.log(`\n🌐 Checking: ${url}`);
+    console.log(`\n Checking: ${url}`);
 
     const pageResult = {
       url,
@@ -326,7 +326,7 @@ async function crawlAndTest() {
         return metaTags;
       });
     } catch (error) {
-      console.log(`⚠ Could not extract meta tags for ${url}`);
+      console.log(`Could not extract meta tags for ${url}`);
     }
 
     // Comprehensive image analysis
@@ -375,7 +375,7 @@ async function crawlAndTest() {
       });
 
       // Additional check: Verify images with HEAD requests (with duplicate prevention)
-      console.log(`   📸 Found ${pageResult.imagesAnalysis.total} images, verifying...`);
+      console.log(`Found ${pageResult.imagesAnalysis.total} images, verifying...`);
       
       let duplicateChecks = 0;
       let newChecks = 0;
@@ -414,7 +414,7 @@ async function crawlAndTest() {
         }
       }
       
-      console.log(`   🖼️  Image checks: ${newChecks} new, ${duplicateChecks} cached`);
+      console.log(`Image checks: ${newChecks} new, ${duplicateChecks} cached`);
 
       // Update broken images list for backward compatibility
       pageResult.brokenImages = pageResult.imagesAnalysis.details
@@ -422,7 +422,7 @@ async function crawlAndTest() {
         .map(img => img.src);
 
     } catch (error) {
-      console.log(`⚠ Could not analyze images for ${url}: ${error.message}`);
+      console.log(`Could not analyze images for ${url}: ${error.message}`);
     }
 
     // Extract all links (both internal and document links)
@@ -452,9 +452,9 @@ async function crawlAndTest() {
         if (!visited.has(normalizedLink) && !queue.some(q => normalizeUrl(q) === normalizedLink)) {
           internalLinks.push(link);
           queue.push(link);
-          console.log(`   ➕ Added to queue: ${link}`);
+          console.log(`Added to queue: ${link}`);
         } else {
-          console.log(`   ⏭️  Already in queue/visited: ${link}`);
+          console.log(`Already in queue/visited: ${link}`);
         }
       }
     });
@@ -471,7 +471,7 @@ async function crawlAndTest() {
         fullPage: true,
       });
     } catch (screenshotError) {
-      console.log(`⚠ Could not take screenshot for ${url}: ${screenshotError.message}`);
+      console.log(`Could not take screenshot for ${url}: ${screenshotError.message}`);
     }
 
     // Save result
