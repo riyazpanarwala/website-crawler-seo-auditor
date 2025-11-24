@@ -875,7 +875,7 @@ function generateReport() {
                 <div class="screenshot-item">
                   <div class="screenshot-label">
                     Desktop 
-                    <span class="device-badge desktop-badge">375×667</span>
+                    <span class="device-badge desktop-badge">1280 width</span>
                   </div>
                   <a href="screenshots/${r.screenshots.desktop}" target="_blank">
                     <img src="screenshots/${r.screenshots.desktop}" alt="Desktop view of ${r.url}" loading="lazy">
@@ -887,7 +887,7 @@ function generateReport() {
                 <div class="screenshot-item">
                   <div class="screenshot-label">
                     Mobile 
-                    <span class="device-badge mobile-badge">375×667</span>
+                    <span class="device-badge mobile-badge">375 width</span>
                   </div>
                   <a href="screenshots/${mobileShot}" target="_blank">
                     <img src="screenshots/${mobileShot}" alt="Mobile view of ${r.url}" loading="lazy">
@@ -899,7 +899,7 @@ function generateReport() {
                 <div class="screenshot-item">
                   <div class="screenshot-label">
                     Tablet 
-                    <span class="device-badge tablet-badge">768×1024</span>
+                    <span class="device-badge tablet-badge">768 width</span>
                   </div>
                   <a href="screenshots/${tabletShot}" target="_blank">
                     <img src="screenshots/${tabletShot}" alt="Tablet view of ${r.url}" loading="lazy">
