@@ -59,8 +59,6 @@ fs.mkdirSync(REPORT_CONFIG.mobileScreenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.desktopScreenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.tabletScreenshotsDir, { recursive: true });
 
-console.log("testing started...");
-
 // Track already checked images globally to avoid duplicates
 const checkedImages = new Map();
 
@@ -829,7 +827,7 @@ function generateReport() {
           <p><strong>Title:</strong> ${r.title} ${!r.title || r.title === "⚠ Missing <title>" ? '<span class="missing">(MISSING)</span>' : ''}</p>
           <p><strong>Load Time:</strong> <span class="load-time">${r.loadTime}ms</span></p>
 
-          <h3>📸 Screenshots</h3>
+          <h3>Screenshots</h3>
           <div class="screenshot-gallery">
             ${Object.entries(r.screenshots).map(([device, screenshot]) => 
               screenshot ? `
@@ -849,7 +847,7 @@ function generateReport() {
             ).join('')}
           </div>
 
-          <h3>�️ Image Analysis (${imageAnalysis.total || 0} images)</h3>
+          <h3>Image Analysis (${imageAnalysis.total || 0} images)</h3>
 		  ${imageAnalysis.total > 0 ? `
               <div class="image-stats">
                 <div class="image-stat-card">
@@ -885,7 +883,7 @@ function generateReport() {
               ` : ''}
             ` : '<p class="ok">No images found on this page ✔</p>'}
 
-            <h3>� Meta Description</h3>
+            <h3>Meta Description</h3>
             <div class="meta-tags">
               <div class="meta-tag">
                 <div class="meta-tag-name">Status:</div>
@@ -908,7 +906,7 @@ function generateReport() {
             </div>
 
             ${Object.keys(r.metaTags || {}).length > 0 ? `
-            <h3>� Other Important Meta Tags</h3>
+            <h3>Other Important Meta Tags</h3>
             <div class="meta-tags">
               ${Object.entries(r.metaTags).map(([name, value]) => `
                 <div class="meta-tag">
@@ -920,39 +918,39 @@ function generateReport() {
             ` : ''}
 
             ${r.documentLinks && r.documentLinks.length > 0 ? `
-            <h3>� Document Links Found (${r.documentLinks.length})</h3>
+            <h3>Document Links Found (${r.documentLinks.length})</h3>
             <ul>${r.documentLinks.map((l) => `<li class="info">${l}</li>`).join("")}</ul>
             ` : ''}
 
-            <h3>� Critical JavaScript Errors</h3>
+            <h3>Critical JavaScript Errors</h3>
             ${
               r.jsErrors.length
                 ? `<ul>${r.jsErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No critical JS errors ✔</p>'
             }
 
-            <h3>� Critical Console Errors</h3>
+            <h3>Critical Console Errors</h3>
             ${
               r.consoleErrors.length
                 ? `<ul>${r.consoleErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No critical console errors ✔</p>'
             }
 
-            <h3>⚠️ Benign Errors (Usually Safe to Ignore)</h3>
+            <h3>Benign Errors (Usually Safe to Ignore)</h3>
             ${
               r.benignErrors && r.benignErrors.length
                 ? `<ul>${r.benignErrors.map((e) => `<li class="warn">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No benign errors ✔</p>'
             }
 
-            <h3>� Network Issues</h3>
+            <h3>Network Issues</h3>
             ${
               r.networkErrors && r.networkErrors.length
                 ? `<ul>${r.networkErrors.map((e) => `<li class="warn">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No network errors ✔</p>'
             }
 
-            <h3>� Internal Links Found (${r.links.length})</h3>
+            <h3>Internal Links Found (${r.links.length})</h3>
             ${
               r.links.length
                 ? `<ul>${r.links.map((l) => `<li class="info">${l}</li>`).join("")}</ul>`
