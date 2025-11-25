@@ -97,10 +97,6 @@ function isDocumentUrl(url) {
 
 // Enhanced error handling setup
 function setupErrorHandling(page, pageResult) {
-  pageResult.benignErrors = [];
-  pageResult.networkErrors = [];
-  pageResult.warnings = [];
-
   page.on("pageerror", (err) => {
     const message = err.message;
     const benignErrors = [
@@ -959,6 +955,13 @@ function generateReport() {
               r.networkErrors && r.networkErrors.length
                 ? `<ul>${r.networkErrors.map((e) => `<li class="warn">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No network errors ✔</p>'
+            }
+			
+			<h3>Console Warnings</h3>
+            ${
+              r.warnings && r.warnings.length
+                ? `<ul>${r.warnings.map((w) => `<li class="warn">${w}</li>`).join("")}</ul>`
+                : '<p class="ok">No warnings ✔</p>'
             }
 
             <h3>Internal Links Found (${r.links.length})</h3>
