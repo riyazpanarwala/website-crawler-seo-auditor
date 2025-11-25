@@ -289,6 +289,8 @@ async function crawlAndTest() {
       consoleErrors: [],
       brokenImages: [],
 	  benignErrors: [],
+	  networkErrors: [],
+	  warnings: [],
       allImages: [],
       imagesAnalysis: {
         total: 0,
