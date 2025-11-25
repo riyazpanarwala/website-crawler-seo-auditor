@@ -500,6 +500,14 @@ async function crawlAndTest() {
       
       if (isDocumentUrl(link)) {
         documentLinks.push(link);
+        if (
+          link.startsWith(ROOT) &&
+          !visited.has(normalizedLink) &&
+          !queue.some(q => normalizeUrl(q) === normalizedLink)
+        ) {
+          queue.push(link);
+          console.log(`Added document to queue: ${link}`);
+        }
       } else if (link.startsWith(ROOT)) {
         if (!visited.has(normalizedLink) && !queue.some(q => normalizeUrl(q) === normalizedLink)) {
           internalLinks.push(link);
