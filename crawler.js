@@ -59,6 +59,8 @@ fs.mkdirSync(REPORT_CONFIG.mobileScreenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.desktopScreenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.tabletScreenshotsDir, { recursive: true });
 
+console.log("testing started...");
+
 // Track already checked images globally to avoid duplicates
 const checkedImages = new Map();
 
