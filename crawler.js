@@ -2,29 +2,40 @@ import { chromium } from "playwright";
 import fs from "fs";
 
 // 1. Change to your root website URL
-const ROOT = "https://your-website.com";
+const ROOT = "https://ascenten.net";
 
 // 2. Configuration - Report directories
+const BASE_DIR = 'site-report';
+const SCREENSHOTS_DIR = `${BASE_DIR}/screenshots`;
 const REPORT_CONFIG = {
-  baseDir: "site-report",
-  screenshotsDir: "site-report/screenshots",
-  mobileScreenshotsDir: "site-report/screenshots/mobile",
-  desktopScreenshotsDir: "site-report/screenshots/desktop",
-  jsonReport: "site-report/report.json",
-  htmlReport: "site-report/index.html"
+  baseDir: BASE_DIR,
+  screenshotsDir: SCREENSHOTS_DIR,
+  mobileScreenshotsDir: `${SCREENSHOTS_DIR}/mobile`,
+  desktopScreenshotsDir: `${SCREENSHOTS_DIR}/desktop`,
+  tabletScreenshotsDir: `${SCREENSHOTS_DIR}/tablet`,
+  jsonReport: `${BASE_DIR}/report.json`,
+  htmlReport: `${BASE_DIR}/index.html`,
 };
 
-// 3. Mobile device configuration
-const MOBILE_DEVICES = [
+// 3. Device configurations
+const DEVICE_CONFIGS = [
+  {
+    name: 'desktop',
+    viewport: { width: 1280, height: 720 },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    directory: REPORT_CONFIG.desktopScreenshotsDir
+  },
   {
     name: 'mobile',
     viewport: { width: 375, height: 667 }, // iPhone SE
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+    directory: REPORT_CONFIG.mobileScreenshotsDir
   },
   {
     name: 'tablet',
     viewport: { width: 768, height: 1024 }, // iPad
-    userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+    directory: REPORT_CONFIG.tabletScreenshotsDir
   }
 ];
 
@@ -46,27 +57,17 @@ fs.mkdirSync(REPORT_CONFIG.baseDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.screenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.mobileScreenshotsDir, { recursive: true });
 fs.mkdirSync(REPORT_CONFIG.desktopScreenshotsDir, { recursive: true });
+fs.mkdirSync(REPORT_CONFIG.tabletScreenshotsDir, { recursive: true });
 
 // Track already checked images globally to avoid duplicates
-const checkedImages = new Map(); // Map<imageUrl, { exists: boolean, verified: boolean }>
+const checkedImages = new Map();
 
 // Normalize URL to avoid duplicates with different formats
 function normalizeUrl(url) {
   try {
     const parsedUrl = new URL(url);
-    // Remove trailing slashes, fragments, and normalize query parameters if needed
     let normalized = `${parsedUrl.origin}${parsedUrl.pathname}`;
-    normalized = normalized.replace(/\/+$/, ''); // Remove trailing slashes
-    
-    // Optional: Remove common tracking parameters if you want to avoid duplicates
-    // const searchParams = new URLSearchParams(parsedUrl.search);
-    // ['utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid'].forEach(param => {
-    //   searchParams.delete(param);
-    // });
-    // if (searchParams.toString()) {
-    //   normalized += `?${searchParams.toString()}`;
-    // }
-    
+    normalized = normalized.replace(/\/+$/, '');
     return normalized;
   } catch {
     return url;
@@ -77,7 +78,6 @@ function normalizeUrl(url) {
 function normalizeImageUrl(url) {
   try {
     const parsedUrl = new URL(url);
-    // For images, we often want to ignore query parameters as they might be cache busters
     return `${parsedUrl.origin}${parsedUrl.pathname}`;
   } catch {
     return url;
@@ -97,16 +97,12 @@ function isDocumentUrl(url) {
 
 // Enhanced error handling setup
 function setupErrorHandling(page, pageResult) {
-  // Initialize additional error categories
   pageResult.benignErrors = [];
   pageResult.networkErrors = [];
   pageResult.warnings = [];
 
-  // Track page errors (JavaScript exceptions)
   page.on("pageerror", (err) => {
     const message = err.message;
-    
-    // Common benign errors to ignore
     const benignErrors = [
       /Syntax error, unrecognized expression:/,
       /jQuery\.expr/,
@@ -125,7 +121,6 @@ function setupErrorHandling(page, pageResult) {
     }
   });
 
-  // Track console errors
   page.on("console", (msg) => {
     const text = msg.text();
     const type = msg.type();
@@ -149,7 +144,6 @@ function setupErrorHandling(page, pageResult) {
     }
   });
 
-  // Track network errors
   page.on("response", (response) => {
     if (response.status() >= 400) {
       pageResult.networkErrors.push(`${response.status()} - ${response.url()}`);
@@ -193,7 +187,6 @@ async function checkDocumentUrl(page, url, pageResult) {
 async function checkImageExists(page, imageUrl) {
   const normalizedImageUrl = normalizeImageUrl(imageUrl);
   
-  // Check if we've already verified this image
   if (checkedImages.has(normalizedImageUrl)) {
     const existingCheck = checkedImages.get(normalizedImageUrl);
     console.log(`Using cached check for: ${imageUrl} -> ${existingCheck.exists ? 'EXISTS' : 'BROKEN'}`);
@@ -213,7 +206,6 @@ async function checkImageExists(page, imageUrl) {
     
     const exists = response.ok && response.status === 200;
     
-    // Cache the result
     checkedImages.set(normalizedImageUrl, { 
       exists, 
       verified: true,
@@ -223,7 +215,6 @@ async function checkImageExists(page, imageUrl) {
     
     return exists;
   } catch {
-    // Cache the failure
     checkedImages.set(normalizedImageUrl, { 
       exists: false, 
       verified: true,
@@ -235,56 +226,34 @@ async function checkImageExists(page, imageUrl) {
 }
 
 // Function to take screenshots for different devices
-async function takeScreenshots(page, url, normalizedUrl) {
+async function takeScreenshots(browser, url, normalizedUrl) {
   const screenshots = {
     desktop: null,
-    mobile: [],
-    tablet: []
+    mobile: null,
+    tablet: null
   };
 
   const fileName = encodeURIComponent(normalizedUrl.replace(/[^a-zA-Z0-9]/g, '_'));
 
-  try {
-    // Take desktop screenshot
-    const desktopPath = `${REPORT_CONFIG.desktopScreenshotsDir}/${fileName}.png`;
-    await page.screenshot({
-      path: desktopPath,
-      fullPage: true,
-    });
-    screenshots.desktop = `desktop/${fileName}.png`;
-    console.log(`   📸 Desktop screenshot saved`);
-  } catch (screenshotError) {
-    console.log(`   ⚠ Could not take desktop screenshot: ${screenshotError.message}`);
-  }
-
-  // Take mobile and tablet screenshots
-  for (const device of MOBILE_DEVICES) {
+  for (const device of DEVICE_CONFIGS) {
     try {
-      // Create a new context for each device to ensure clean state
-      const context = await page.context().browser().newContext({
+      const context = await browser.newContext({
         viewport: device.viewport,
         userAgent: device.userAgent
       });
       const devicePage = await context.newPage();
       
-      // Navigate to the URL with device-specific context
       await devicePage.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
       
-      const devicePath = `${REPORT_CONFIG.mobileScreenshotsDir}/${device.name}_${fileName}.png`;
+      const devicePath = `${device.directory}/${fileName}.png`;
       await devicePage.screenshot({
         path: devicePath,
         fullPage: true,
       });
       
-      if (device.name === 'mobile') {
-        screenshots.mobile.push(`mobile/${device.name}_${fileName}.png`);
-      } else {
-        screenshots.tablet.push(`mobile/${device.name}_${fileName}.png`);
-      }
+      screenshots[device.name] = `${device.name}/${fileName}.png`;
+      console.log(`   📸 ${device.name} screenshot saved (${device.viewport.width}×${device.viewport.height})`);
       
-      console.log(`   📸 ${device.name} screenshot saved`);
-      
-      // Close the device context
       await context.close();
     } catch (deviceError) {
       console.log(`   ⚠ Could not take ${device.name} screenshot: ${deviceError.message}`);
@@ -299,18 +268,11 @@ async function crawlAndTest() {
     headless: true,
     timeout: 60000 
   });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  // Set default timeouts
-  page.setDefaultTimeout(30000);
-  page.setDefaultNavigationTimeout(30000);
 
   while (queue.length > 0) {
     const url = queue.shift();
     const normalizedUrl = normalizeUrl(url);
     
-    // Check if this URL (or normalized version) has already been visited
     if (visited.has(normalizedUrl)) {
       console.log(`Skipping already checked: ${url}`);
       continue;
@@ -344,17 +306,27 @@ async function crawlAndTest() {
       documentStatus: "",
       screenshots: {
         desktop: null,
-        mobile: [],
-        tablet: []
+        mobile: null,
+        tablet: null
       }
     };
 
     // Check if this is a document URL
     if (isDocumentUrl(url)) {
+      const context = await browser.newContext();
+      const page = await context.newPage();
       await checkDocumentUrl(page, url, pageResult);
+      await context.close();
       results.push(pageResult);
-      continue; // Skip HTML parsing for documents
+      continue;
     }
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Set default timeouts
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
 
     // Setup enhanced error handling for HTML pages
     setupErrorHandling(page, pageResult);
@@ -368,6 +340,7 @@ async function crawlAndTest() {
     } catch (err) {
       pageResult.jsErrors.push("Page failed to load: " + err.message);
       pageResult.loadTime = Date.now() - startTime;
+      await context.close();
       results.push(pageResult);
       continue;
     }
@@ -414,7 +387,7 @@ async function crawlAndTest() {
 
     // Comprehensive image analysis
     try {
-      pageResult.imagesAnalysis = await page.evaluate(async () => {
+      pageResult.imagesAnalysis = await page.evaluate(() => {
         const images = Array.from(document.querySelectorAll('img'));
         const analysis = {
           total: images.length,
@@ -435,14 +408,12 @@ async function crawlAndTest() {
             isWorking: false
           };
 
-          // Check if image has alt text
           if (img.alt && img.alt.trim() !== '') {
             analysis.withAlt++;
           } else {
             analysis.withoutAlt++;
           }
 
-          // Check if image is naturally loaded and has dimensions
           if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
             analysis.working++;
             imageInfo.isWorking = true;
@@ -457,7 +428,7 @@ async function crawlAndTest() {
         return analysis;
       });
 
-      // Additional check: Verify images with HEAD requests (with duplicate prevention)
+      // Additional check: Verify images with HEAD requests
       console.log(`Found ${pageResult.imagesAnalysis.total} images, verifying...`);
       
       let duplicateChecks = 0;
@@ -467,7 +438,6 @@ async function crawlAndTest() {
         if (imageInfo.src && !imageInfo.src.startsWith('data:')) {
           const normalizedImageUrl = normalizeImageUrl(imageInfo.src);
           
-          // Check if we've already verified this image
           if (checkedImages.has(normalizedImageUrl)) {
             const existingCheck = checkedImages.get(normalizedImageUrl);
             imageInfo.verifiedExists = existingCheck.exists;
@@ -475,20 +445,17 @@ async function crawlAndTest() {
             duplicateChecks++;
             
             if (!existingCheck.exists && imageInfo.isWorking) {
-              // If cached check says broken but browser thinks it's working, mark as broken
               imageInfo.isWorking = false;
               pageResult.imagesAnalysis.working--;
               pageResult.imagesAnalysis.broken++;
             }
           } else {
-            // New image, perform HEAD request
             const exists = await checkImageExists(page, imageInfo.src);
             imageInfo.verifiedExists = exists;
             imageInfo.cachedCheck = false;
             newChecks++;
             
             if (!exists && imageInfo.isWorking) {
-              // If HEAD request fails but browser thinks it's working, mark as broken
               imageInfo.isWorking = false;
               pageResult.imagesAnalysis.working--;
               pageResult.imagesAnalysis.broken++;
@@ -499,7 +466,6 @@ async function crawlAndTest() {
       
       console.log(`Image checks: ${newChecks} new, ${duplicateChecks} cached`);
 
-      // Update broken images list for backward compatibility
       pageResult.brokenImages = pageResult.imagesAnalysis.details
         .filter(img => !img.isWorking)
         .map(img => img.src);
@@ -510,9 +476,9 @@ async function crawlAndTest() {
 
     // Take screenshots for all devices
     console.log(`Taking screenshots for different devices...`);
-    pageResult.screenshots = await takeScreenshots(page, url, normalizedUrl);
+    pageResult.screenshots = await takeScreenshots(browser, url, normalizedUrl);
 
-    // Extract all links (both internal and document links)
+    // Extract all links
     const allLinks = await page.$$eval("a[href]", (as, root) => {
       return as
         .map((a) => {
@@ -535,35 +501,29 @@ async function crawlAndTest() {
       if (isDocumentUrl(link)) {
         documentLinks.push(link);
       } else if (link.startsWith(ROOT)) {
-        // Only add to queue if not already visited or queued
         if (!visited.has(normalizedLink) && !queue.some(q => normalizeUrl(q) === normalizedLink)) {
           internalLinks.push(link);
           queue.push(link);
           console.log(`Added to queue: ${link}`);
-        } else {
-          console.log(`Already in queue/visited: ${link}`);
         }
       }
     });
 
-    // Track document links but don't add to queue (we'll check them separately)
     pageResult.links = internalLinks;
     pageResult.documentLinks = documentLinks;
 
-    // Save result
+    await context.close();
     results.push(pageResult);
     
     // Small delay to be respectful to the server
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   await browser.close();
   generateReport();
 }
 
-// -----------------------------------------------------
 // GENERATE HTML REPORT
-// -----------------------------------------------------
 function generateReport() {
   // Calculate summary statistics
   const totalPages = results.length;
@@ -589,7 +549,6 @@ function generateReport() {
 
   // Performance statistics
   const totalUniqueImagesChecked = checkedImages.size;
-  const cachedImageChecks = Array.from(checkedImages.values()).filter(img => img.cached).length;
 
   let html = `
   <html>
@@ -833,84 +792,63 @@ function generateReport() {
       </div>
     </div>
 
-    ${results
-      .map((r) => {
-        if (r.isDocument) {
-          return `
-            <div class="page-section document-section">
-              <h2 class="document">📄 ${r.documentType} Document: ${r.url}</h2>
-              <p><strong>Status:</strong> 
-                <span class="document-status ${r.documentStatus === 'accessible' ? 'document-accessible' : 'document-broken'}">
-                  ${r.documentStatus === 'accessible' ? '✅ ACCESSIBLE' : '❌ BROKEN'}
-                </span>
-              </p>
-              <p><strong>Load Time:</strong> <span class="load-time">${r.loadTime}ms</span></p>
-              <p><strong>HTTP Status:</strong> ${r.statusCode}</p>
-              
-              ${r.jsErrors.length > 0 ? `
-                <h3>🚨 Document Issues</h3>
-                <ul>${r.jsErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>
-              ` : ''}
-            </div>
-          `;
-        }
-
-        const hasMetaDescription = r.metaDescription && r.metaDescription.trim().length > 0;
-        const descriptionLength = r.metaDescription ? r.metaDescription.length : 0;
-        const descriptionStatus = !hasMetaDescription ? 'missing' : 
-                                descriptionLength < 50 ? 'too-short' : 
-                                descriptionLength > 160 ? 'too-long' : 'good';
-        
-        const imageAnalysis = r.imagesAnalysis || {};
-        
+    ${results.map((r) => {
+      if (r.isDocument) {
         return `
-          <div class="page-section">
-            <h2>${r.url}</h2>
-            <p><strong>Title:</strong> ${r.title} ${!r.title || r.title === "⚠ Missing <title>" ? '<span class="missing">(MISSING)</span>' : ''}</p>
+          <div class="page-section document-section">
+            <h2 class="document">📄 ${r.documentType} Document: ${r.url}</h2>
+            <p><strong>Status:</strong> 
+              <span class="document-status ${r.documentStatus === 'accessible' ? 'document-accessible' : 'document-broken'}">
+                ${r.documentStatus === 'accessible' ? '✅ ACCESSIBLE' : '❌ BROKEN'}
+              </span>
+            </p>
             <p><strong>Load Time:</strong> <span class="load-time">${r.loadTime}ms</span></p>
+            <p><strong>HTTP Status:</strong> ${r.statusCode}</p>
+            
+            ${r.jsErrors.length > 0 ? `
+              <h3>🚨 Document Issues</h3>
+              <ul>${r.jsErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>
+            ` : ''}
+          </div>
+        `;
+      }
 
-            <h3>📸 Screenshots</h3>
-            <div class="screenshot-gallery">
-              ${r.screenshots.desktop ? `
-                <div class="screenshot-item">
-                  <div class="screenshot-label">
-                    Desktop 
-                    <span class="device-badge desktop-badge">1280 width</span>
-                  </div>
-                  <a href="screenshots/${r.screenshots.desktop}" target="_blank">
-                    <img src="screenshots/${r.screenshots.desktop}" alt="Desktop view of ${r.url}" loading="lazy">
-                  </a>
-                  <div>Click to view full size</div>
-                </div>
-              ` : ''}
-              ${r.screenshots.mobile.map(mobileShot => `
-                <div class="screenshot-item">
-                  <div class="screenshot-label">
-                    Mobile 
-                    <span class="device-badge mobile-badge">375 width</span>
-                  </div>
-                  <a href="screenshots/${mobileShot}" target="_blank">
-                    <img src="screenshots/${mobileShot}" alt="Mobile view of ${r.url}" loading="lazy">
-                  </a>
-                  <div>Click to view full size</div>
-                </div>
-              `).join('')}
-              ${r.screenshots.tablet.map(tabletShot => `
-                <div class="screenshot-item">
-                  <div class="screenshot-label">
-                    Tablet 
-                    <span class="device-badge tablet-badge">768 width</span>
-                  </div>
-                  <a href="screenshots/${tabletShot}" target="_blank">
-                    <img src="screenshots/${tabletShot}" alt="Tablet view of ${r.url}" loading="lazy">
-                  </a>
-                  <div>Click to view full size</div>
-                </div>
-              `).join('')}
-            </div>
+      const hasMetaDescription = r.metaDescription && r.metaDescription.trim().length > 0;
+      const descriptionLength = r.metaDescription ? r.metaDescription.length : 0;
+      const descriptionStatus = !hasMetaDescription ? 'missing' : 
+                              descriptionLength < 50 ? 'too-short' : 
+                              descriptionLength > 160 ? 'too-long' : 'good';
+      
+      const imageAnalysis = r.imagesAnalysis || {};
+      
+      return `
+        <div class="page-section">
+          <h2>${r.url}</h2>
+          <p><strong>Title:</strong> ${r.title} ${!r.title || r.title === "⚠ Missing <title>" ? '<span class="missing">(MISSING)</span>' : ''}</p>
+          <p><strong>Load Time:</strong> <span class="load-time">${r.loadTime}ms</span></p>
 
-            <h3>🖼️ Image Analysis (${imageAnalysis.total || 0} images)</h3>
-            ${imageAnalysis.total > 0 ? `
+          <h3>📸 Screenshots</h3>
+          <div class="screenshot-gallery">
+            ${Object.entries(r.screenshots).map(([device, screenshot]) => 
+              screenshot ? `
+                <div class="screenshot-item">
+                  <div class="screenshot-label">
+                    ${device.charAt(0).toUpperCase() + device.slice(1)} 
+                    <span class="device-badge ${device}-badge">
+                      ${device === 'desktop' ? '1280×720' : device === 'mobile' ? '375×667' : '768×1024'}
+                    </span>
+                  </div>
+                  <a href="screenshots/${screenshot}" target="_blank">
+                    <img src="screenshots/${screenshot}" alt="${device} view of ${r.url}" loading="lazy">
+                  </a>
+                  <div>Click to view full size</div>
+                </div>
+              ` : ''
+            ).join('')}
+          </div>
+
+          <h3>�️ Image Analysis (${imageAnalysis.total || 0} images)</h3>
+		  ${imageAnalysis.total > 0 ? `
               <div class="image-stats">
                 <div class="image-stat-card">
                   <div class="stat-number" style="color: #388e3c">${imageAnalysis.working || 0}</div>
@@ -945,7 +883,7 @@ function generateReport() {
               ` : ''}
             ` : '<p class="ok">No images found on this page ✔</p>'}
 
-            <h3>📝 Meta Description</h3>
+            <h3>� Meta Description</h3>
             <div class="meta-tags">
               <div class="meta-tag">
                 <div class="meta-tag-name">Status:</div>
@@ -968,7 +906,7 @@ function generateReport() {
             </div>
 
             ${Object.keys(r.metaTags || {}).length > 0 ? `
-            <h3>🔍 Other Important Meta Tags</h3>
+            <h3>� Other Important Meta Tags</h3>
             <div class="meta-tags">
               ${Object.entries(r.metaTags).map(([name, value]) => `
                 <div class="meta-tag">
@@ -980,18 +918,18 @@ function generateReport() {
             ` : ''}
 
             ${r.documentLinks && r.documentLinks.length > 0 ? `
-            <h3>📎 Document Links Found (${r.documentLinks.length})</h3>
+            <h3>� Document Links Found (${r.documentLinks.length})</h3>
             <ul>${r.documentLinks.map((l) => `<li class="info">${l}</li>`).join("")}</ul>
             ` : ''}
 
-            <h3>🚨 Critical JavaScript Errors</h3>
+            <h3>� Critical JavaScript Errors</h3>
             ${
               r.jsErrors.length
                 ? `<ul>${r.jsErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No critical JS errors ✔</p>'
             }
 
-            <h3>🚨 Critical Console Errors</h3>
+            <h3>� Critical Console Errors</h3>
             ${
               r.consoleErrors.length
                 ? `<ul>${r.consoleErrors.map((e) => `<li class="error">${e}</li>`).join("")}</ul>`
@@ -1005,20 +943,20 @@ function generateReport() {
                 : '<p class="ok">No benign errors ✔</p>'
             }
 
-            <h3>🌐 Network Issues</h3>
+            <h3>� Network Issues</h3>
             ${
               r.networkErrors && r.networkErrors.length
                 ? `<ul>${r.networkErrors.map((e) => `<li class="warn">${e}</li>`).join("")}</ul>`
                 : '<p class="ok">No network errors ✔</p>'
             }
 
-            <h3>🔗 Internal Links Found (${r.links.length})</h3>
+            <h3>� Internal Links Found (${r.links.length})</h3>
             ${
               r.links.length
                 ? `<ul>${r.links.map((l) => `<li class="info">${l}</li>`).join("")}</ul>`
                 : '<p>No internal links found</p>'
             }
-          </div>
+        </div>
         `;
       })
       .join("")}
@@ -1028,7 +966,7 @@ function generateReport() {
 
   fs.writeFileSync(REPORT_CONFIG.htmlReport, html);
   
-  // Also generate a JSON report for programmatic use
+  // Also generate a JSON report
   fs.writeFileSync(
     REPORT_CONFIG.jsonReport, 
     JSON.stringify({
@@ -1061,7 +999,8 @@ function generateReport() {
   console.log(`📊 JSON data: ${REPORT_CONFIG.jsonReport}`);
   console.log(`📸 Screenshots: ${REPORT_CONFIG.screenshotsDir}`);
   console.log(`   ├── Desktop: ${REPORT_CONFIG.desktopScreenshotsDir}`);
-  console.log(`   └── Mobile: ${REPORT_CONFIG.mobileScreenshotsDir}`);
+  console.log(`   ├── Mobile: ${REPORT_CONFIG.mobileScreenshotsDir}`);
+  console.log(`   └── Tablet: ${REPORT_CONFIG.tabletScreenshotsDir}`);
   console.log(`\n📈 Summary:`);
   console.log(`   Total URLs checked: ${totalPages}`);
   console.log(`   HTML pages: ${htmlPages.length}`);
