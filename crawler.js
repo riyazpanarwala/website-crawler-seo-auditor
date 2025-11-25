@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import fs from "fs";
 
 // 1. Change to your root website URL
-const ROOT = "https://ascenten.net";
+const ROOT = "https://your-website.com";
 
 // 2. Configuration - Report directories
 const BASE_DIR = 'site-report';
