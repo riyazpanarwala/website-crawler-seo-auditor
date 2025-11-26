@@ -13,6 +13,7 @@ const REPORT_CONFIG = {
   mobileScreenshotsDir: `${SCREENSHOTS_DIR}/mobile`,
   desktopScreenshotsDir: `${SCREENSHOTS_DIR}/desktop`,
   tabletScreenshotsDir: `${SCREENSHOTS_DIR}/tablet`,
+  urlsReport: `${BASE_DIR}/urls.txt`,
   jsonReport: `${BASE_DIR}/report.json`,
   htmlReport: `${BASE_DIR}/index.html`,
 };
@@ -977,6 +978,16 @@ function generateReport() {
   </body>
   </html>
   `;
+
+  const totalurl = [];
+
+  results.forEach((page) => {
+    const url = page.url?.trim();
+    if (!url) return;
+    totalurl.push(url);
+  });
+
+  fs.writeFileSync(REPORT_CONFIG.urlsReport, totalurl.join('\n') + '\n', 'utf8');
 
   fs.writeFileSync(REPORT_CONFIG.htmlReport, html);
   
