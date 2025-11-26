@@ -13,6 +13,7 @@ const REPORT_CONFIG = {
   mobileScreenshotsDir: `${SCREENSHOTS_DIR}/mobile`,
   desktopScreenshotsDir: `${SCREENSHOTS_DIR}/desktop`,
   tabletScreenshotsDir: `${SCREENSHOTS_DIR}/tablet`,
+  urlsReport: `${BASE_DIR}/urls.txt`,
   jsonReport: `${BASE_DIR}/report.json`,
   htmlReport: `${BASE_DIR}/index.html`,
 };
@@ -248,11 +249,11 @@ async function takeScreenshots(browser, url, normalizedUrl) {
       });
       
       screenshots[device.name] = `${device.name}/${fileName}.png`;
-      console.log(`   📸 ${device.name} screenshot saved (${device.viewport.width}×${device.viewport.height})`);
+      console.log(`${device.name} screenshot saved (${device.viewport.width}×${device.viewport.height})`);
       
       await context.close();
     } catch (deviceError) {
-      console.log(`   ⚠ Could not take ${device.name} screenshot: ${deviceError.message}`);
+      console.log(`Could not take ${device.name} screenshot: ${deviceError.message}`);
     }
   }
 
@@ -978,6 +979,18 @@ function generateReport() {
   </html>
   `;
 
+  const totalUrls  = [];
+
+  results.forEach((page) => {
+    const url = page.url?.trim();
+    if (!url) return;
+    totalUrls .push(url);
+  });
+
+  // Save only clean URLs
+  const uniqueUrls = Array.from(new Set(totalUrls));
+  fs.writeFileSync(REPORT_CONFIG.urlsReport, uniqueUrls.join('\n') + '\n', 'utf8');
+
   fs.writeFileSync(REPORT_CONFIG.htmlReport, html);
   
   // Also generate a JSON report
@@ -1009,13 +1022,13 @@ function generateReport() {
     }, null, 2)
   );
   
-  console.log(`\n📄 Report generated: ${REPORT_CONFIG.htmlReport}`);
-  console.log(`📊 JSON data: ${REPORT_CONFIG.jsonReport}`);
-  console.log(`📸 Screenshots: ${REPORT_CONFIG.screenshotsDir}`);
+  console.log(`\n Report generated: ${REPORT_CONFIG.htmlReport}`);
+  console.log(`JSON data: ${REPORT_CONFIG.jsonReport}`);
+  console.log(`Screenshots: ${REPORT_CONFIG.screenshotsDir}`);
   console.log(`   ├── Desktop: ${REPORT_CONFIG.desktopScreenshotsDir}`);
   console.log(`   ├── Mobile: ${REPORT_CONFIG.mobileScreenshotsDir}`);
   console.log(`   └── Tablet: ${REPORT_CONFIG.tabletScreenshotsDir}`);
-  console.log(`\n📈 Summary:`);
+  console.log(`\n Summary:`);
   console.log(`   Total URLs checked: ${totalPages}`);
   console.log(`   HTML pages: ${htmlPages.length}`);
   console.log(`   Documents: ${documentPages.length}`);
@@ -1025,7 +1038,7 @@ function generateReport() {
   console.log(`   Pages missing descriptions: ${pagesMissingDescriptions}`);
   console.log(`   Total critical errors: ${totalCriticalErrors}`);
   console.log(`   Total broken images: ${totalBrokenImages}`);
-  console.log(`\n🖼️  Image Analysis:`);
+  console.log(`\n Image Analysis:`);
   console.log(`   Total images: ${totalImages}`);
   console.log(`   Working images: ${totalWorkingImages}`);
   console.log(`   Broken images: ${totalBrokenImagesDetailed}`);
