@@ -1,5 +1,6 @@
 // extract-urls.js
 import fs from 'fs';
+import path from 'path';
 
 // CONFIGURATION
 const inputFile = 'site-report/report.json';     // Your report file
@@ -35,10 +36,14 @@ function extractCleanUrls() {
 
     // Save only clean URLs
     const uniqueUrls = Array.from(new Set(cleanUrls));
+    const dir = path.dirname(outputFile);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(outputFile, uniqueUrls.join('\n') + '\n', 'utf8');
 
     console.log('\n' + '='.repeat(70));
-    console.log(`Done! ${cleanUrls.length} clean URLs (no images, no PDFs) saved to:`);
+    console.log(`Done! ${uniqueUrls.length} clean URLs (${cleanUrls.length - uniqueUrls.length} duplicates removed) saved to:`);
     console.log(`→ ${outputFile}`);
     console.log('='.repeat(70));
 
