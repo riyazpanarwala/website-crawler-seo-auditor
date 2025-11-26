@@ -979,15 +979,17 @@ function generateReport() {
   </html>
   `;
 
-  const totalurl = [];
+  const totalUrls  = [];
 
   results.forEach((page) => {
     const url = page.url?.trim();
     if (!url) return;
-    totalurl.push(url);
+    totalUrls .push(url);
   });
 
-  fs.writeFileSync(REPORT_CONFIG.urlsReport, totalurl.join('\n') + '\n', 'utf8');
+  // Save only clean URLs
+  const uniqueUrls = Array.from(new Set(totalUrls));
+  fs.writeFileSync(REPORT_CONFIG.urlsReport, uniqueUrls.join('\n') + '\n', 'utf8');
 
   fs.writeFileSync(REPORT_CONFIG.htmlReport, html);
   

@@ -38,7 +38,8 @@ function extractCleanUrls() {
     });
 
     // Save only clean URLs
-    fs.writeFileSync(outputFile, cleanUrls.join('\n') + '\n', 'utf8');
+    const uniqueUrls = Array.from(new Set(cleanUrls));
+    fs.writeFileSync(outputFile, uniqueUrls.join('\n') + '\n', 'utf8');
 
     console.log('\n' + '='.repeat(70));
     console.log(`Done! ${cleanUrls.length} clean URLs (no images, no PDFs) saved to:`);
