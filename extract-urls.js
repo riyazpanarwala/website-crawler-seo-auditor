@@ -1,6 +1,5 @@
 // extract-urls.js
 import fs from 'fs';
-import path from 'path';
 
 // CONFIGURATION
 const inputFile = 'site-report/report.json';     // Your report file
@@ -29,11 +28,8 @@ function extractCleanUrls() {
       const url = page.url?.trim();
       if (!url) return;
 
-      if (isImageOrPdf(url)) {
-        console.log(`Skipped (image/pdf): ${url}`);
-      } else {
+      if (!isImageOrPdf(url)) {
         cleanUrls.push(url);
-        console.log(`${(cleanUrls.length).toString().padStart(3)}. ${url}`);
       }
     });
 
