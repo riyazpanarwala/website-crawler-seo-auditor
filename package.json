@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node crawler.js",
-	"urls": "node extract-urls.js",
+    "urls": "node extract-urls.js",
     "dev": "node --watch crawler.js",
     "test": "echo \"No tests specified\" && exit 0"
   },
